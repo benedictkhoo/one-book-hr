@@ -1,11 +1,13 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
 import counterReducer from '../features/counter/counterSlice';
 import employeeListReducer from '../features/employee/employeeListSlice';
+import newEmployeeReducer from '../features/employee/newEmployeeSlice';
 
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
-    employeeList: employeeListReducer
+    employeeList: employeeListReducer,
+    newEmployee: newEmployeeReducer
   },
 });
 
