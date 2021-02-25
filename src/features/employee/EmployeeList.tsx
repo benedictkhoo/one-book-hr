@@ -1,8 +1,11 @@
 import AppBar from '@material-ui/core/AppBar';
+import Avatar from '@material-ui/core/Avatar';
 import Container from '@material-ui/core/Container';
 import Fab from '@material-ui/core/Fab';
 import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
@@ -13,10 +16,10 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import AddIcon from '@material-ui/icons/Add';
-import React, { useEffect } from 'react';
+import React, { MouseEvent, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { logout, selectCurrentUser } from '../../appSlice';
 import { loadEmployees, selectEmployees, selectStatus } from './employeeListSlice';
 
 const useStyles = makeStyles((theme) => ({
@@ -31,10 +34,20 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function EmployeeList() {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectCurrentUser);
   const status = useSelector(selectStatus);
   const employees = useSelector(selectEmployees);
-  const dispatch = useDispatch();
+  const openUserMenu = (event: MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const closeUserMenu = () => {
+    setAnchorEl(null);
+  };
+  const signOut = () => dispatch(logout());
   const classes = useStyles();
+  const isUserMenuOpen = !!anchorEl;
 
   useEffect(() => {
     if (status === 'idle' && employees.length === 0) {
@@ -50,8 +63,12 @@ export function EmployeeList() {
             Employees
           </Typography>
 
-          <IconButton color="inherit">
-            <AccountCircleIcon />
+          <IconButton color="inherit" onClick={openUserMenu}>
+            {
+              currentUser?.photoUrl
+                ? <Avatar src={currentUser?.photoUrl} />
+                : <Avatar>{currentUser?.displayName.toUpperCase()[0]}</Avatar>
+            }
           </IconButton>
         </Toolbar>
         {
@@ -59,6 +76,16 @@ export function EmployeeList() {
           <LinearProgress />
         }
       </AppBar>
+
+      <Menu
+        anchorEl={anchorEl}
+        id="userMenu"
+        keepMounted
+        open={isUserMenuOpen}
+        onClose={closeUserMenu}
+      >
+        <MenuItem onClick={signOut}>Logout</MenuItem>
+      </Menu>
 
       <Container component="main">
         {
