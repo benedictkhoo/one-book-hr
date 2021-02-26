@@ -26,6 +26,9 @@ const useStyles = makeStyles((theme) => ({
   grow: {
     flexGrow: 1
   },
+  container: {
+    padding: theme.spacing(1)
+  },
   fab: {
     position: 'absolute',
     bottom: theme.spacing(2),
@@ -87,7 +90,13 @@ export function EmployeeList() {
         <MenuItem onClick={signOut}>Logout</MenuItem>
       </Menu>
 
-      <Container component="main">
+      <Container className={classes.container} component="main">
+        {
+          (status !== 'loading' && employees.length === 0) &&
+          <Typography component="p" variant="body1">
+            No employees yet
+          </Typography>
+        }
         {
           status !== 'loading' && employees.length > 0 &&
           <TableContainer component={Paper}>

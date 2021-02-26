@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 
 interface Employee {
   id: string;
@@ -22,28 +24,24 @@ const initialState: EmployeeListState = {
 };
 
 export const loadEmployees = createAsyncThunk<Employee[]>('loadEmployees', async () => {
-  // Mock data
-  return new Promise(resolve => setTimeout(resolve, 1000)).then(() => {
-    return [
-      {
-        id: '123',
-        firstName: 'John',
-        middleInitial: '',
-        lastName: 'Doe',
-        dateOfBirth: new Date().toDateString(),
-        dateOfEmployment: new Date().toDateString(),
-        status: true
-      },
-      {
-        id: '456',
-        firstName: 'Jane',
-        middleInitial: '',
-        lastName: 'Doe',
-        dateOfBirth: new Date().toDateString(),
-        dateOfEmployment: new Date().toDateString(),
-        status: true
-      }
-    ];
+  return firebase.firestore().collection('employees').get().then((query) => {
+    if (query.empty) {
+      return [];
+    }
+
+    return query.docs.map<Employee>((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        firstName: data.firstName,
+        middleInitial: data.middleInitial,
+        lastName: data.lastName,
+        dateOfBirth: data.dateOfBirth,
+        dateOfEmployment: data.dateOfEmployment,
+        status: data.status
+      };
+    });
   });
 });
 
@@ -58,7 +56,10 @@ export const employeeListSlice = createSlice({
 
     builder.addCase(loadEmployees.fulfilled, (state, action) => {
       state.status = 'succeeded';
-      state.employees = state.employees.concat(action.payload);
+
+      if (action.payload.length > 0) {
+        state.employees = state.employees.concat(action.payload);
+      }
     });
 
     builder.addCase(loadEmployees.rejected, state => {
