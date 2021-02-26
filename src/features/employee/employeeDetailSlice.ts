@@ -1,4 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 import { RootState } from '../../app/store';
 
 interface Employee {
@@ -17,6 +19,7 @@ interface Input<T> {
 }
 
 interface EmployeeDetailState {
+  id: string;
   firstName: Input<string>;
   middleInitial: Input<string>;
   lastName: Input<string>;
@@ -28,6 +31,7 @@ interface EmployeeDetailState {
 }
 
 const initialState: EmployeeDetailState = {
+  id: '',
   firstName: {
     value: '',
     valid: true
@@ -56,31 +60,38 @@ const initialState: EmployeeDetailState = {
   status: 'idle'
 };
 
-export const loadEmployee = createAsyncThunk<Employee>('loadEmployee', async () => {
-  // Mock data
-  return new Promise(resolve => setTimeout(resolve, 1000)).then(() => {
-    return {
-      id: '123',
-      firstName: 'John',
-      middleInitial: '',
-      lastName: 'Doe',
-      dateOfBirth: new Date().toISOString().split('T')[0],
-      dateOfEmployment: new Date().toISOString().split('T')[0],
-      status: true
+export const loadEmployee = createAsyncThunk<Employee, string>('loadEmployee', async (id) => {
+  return firebase.firestore().doc(`employees/${id}`).get().then((snapshot) => {
+    const data = snapshot.data() as Partial<Employee>;
+
+    return <Employee>{
+      id: snapshot.id,
+      firstName: data.firstName,
+      middleInitial: data.middleInitial,
+      lastName: data.lastName,
+      dateOfBirth: data.dateOfBirth,
+      dateOfEmployment: data.dateOfEmployment,
+      status: data.status
     };
   });
 });
 
 export const saveEmployee = createAsyncThunk('saveEmployee', async (_, { dispatch, getState }) => {
-  // Mock request
   dispatch(validateForm());
 
   const state = getState() as RootState;
-  const { firstName, lastName, dateOfBirth, dateOfEmployment } = state.employeeDetail;
+  const { id, firstName, middleInitial, lastName, dateOfBirth, dateOfEmployment, employmentStatus } = state.employeeDetail;
   const isFormValid = firstName.valid && lastName.valid && dateOfBirth.valid && dateOfEmployment.valid;
 
   if (isFormValid) {
-    await new Promise<void>(resolve => setTimeout(resolve, 1000));
+    return firebase.firestore().doc(`employees/${id}`).update({
+      firstName: firstName.value,
+      middleInitial: middleInitial.value,
+      lastName: lastName.value,
+      dateOfBirth: dateOfBirth.value,
+      dateOfEmployment: dateOfEmployment.value,
+      status: employmentStatus.value
+    });
   }
 });
 
@@ -127,6 +138,7 @@ export const employeeDetailSlice = createSlice({
     });
 
     builder.addCase(loadEmployee.fulfilled, (state, action) => {
+      state.id = action.payload.id;
       state.firstName.value = action.payload.firstName;
       state.middleInitial.value = action.payload.middleInitial;
       state.lastName.value = action.payload.lastName;

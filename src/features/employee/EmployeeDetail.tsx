@@ -88,7 +88,7 @@ export function EmployeeDetail() {
 
   useEffect(() => {
     if (status === 'idle') {
-      dispatch(loadEmployee());
+      dispatch(loadEmployee(''));
     }
   });
 
