@@ -1,4 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 import { RootState } from '../../app/store';
 
 interface Input<T> {
@@ -42,15 +44,21 @@ const initialState: NewEmployeeState = {
 };
 
 export const saveEmployee = createAsyncThunk('saveEmployee', async (_, { dispatch, getState }) => {
-  // Mock request
   dispatch(validateForm());
 
   const state = getState() as RootState;
-  const { firstName, lastName, dateOfBirth, dateOfEmployment } = state.newEmployee;
+  const { firstName, middleInitial, lastName, dateOfBirth, dateOfEmployment } = state.newEmployee;
   const isFormValid = firstName.valid && lastName.valid && dateOfBirth.valid && dateOfEmployment.valid;
 
   if (isFormValid) {
-    await new Promise<void>(resolve => setTimeout(resolve, 1000));
+    return firebase.firestore().collection('employees').add({
+      firstName: firstName.value,
+      middleInitial: middleInitial.value,
+      lastName: lastName.value,
+      dateOfBirth: dateOfBirth.value,
+      dateOfEmployment: dateOfEmployment.value,
+      status: true
+    }).then(() => true);
   }
 });
 
