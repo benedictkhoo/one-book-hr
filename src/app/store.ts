@@ -1,18 +1,26 @@
-import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
+import { Action, combineReducers, configureStore, ThunkAction } from '@reduxjs/toolkit';
+import { connectRouter, routerMiddleware } from 'connected-react-router';
+import { createBrowserHistory, History } from 'history';
+import appReducer from '../appSlice';
 import counterReducer from '../features/counter/counterSlice';
+import employeeDetailReducer from '../features/employee/employeeDetailSlice';
 import employeeListReducer from '../features/employee/employeeListSlice';
 import newEmployeeReducer from '../features/employee/newEmployeeSlice';
-import employeeDetailReducer from '../features/employee/employeeDetailSlice';
-import appReducer from '../appSlice'
+
+export const history = createBrowserHistory();
+
+const rootReducer = (history: History) => combineReducers({
+  router: connectRouter(history),
+  app: appReducer,
+  counter: counterReducer,
+  employeeList: employeeListReducer,
+  newEmployee: newEmployeeReducer,
+  employeeDetail: employeeDetailReducer
+});
 
 export const store = configureStore({
-  reducer: {
-    app: appReducer,
-    counter: counterReducer,
-    employeeList: employeeListReducer,
-    newEmployee: newEmployeeReducer,
-    employeeDetail: employeeDetailReducer
-  },
+  reducer: rootReducer(history),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(routerMiddleware(history)),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

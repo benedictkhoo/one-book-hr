@@ -1,4 +1,5 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { push } from 'connected-react-router';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 import { RootState } from './app/store';
@@ -18,16 +19,36 @@ const initialState: AppState = {
   status: 'idle'
 };
 
-export const login = createAsyncThunk('login', async () => {
+export const loadUser = createAsyncThunk('loadUser', async (_, { dispatch }) => {
+  return new Promise(() => {
+    const currentUser = firebase.auth().currentUser;
+
+    if (currentUser) {
+      dispatch(updateUser({
+        displayName: currentUser.displayName || '',
+        photoUrl: currentUser.photoURL || ''
+      }));
+      dispatch(push('/employees'));
+    }
+    else {
+      dispatch(updateUser(null));
+    }
+  });
+});
+
+export const login = createAsyncThunk('login', async (_, { dispatch }) => {
   const profile = new firebase.auth.GoogleAuthProvider();
 
   profile.addScope('https://www.googleapis.com/auth/userinfo.profile');
 
-  return firebase.auth().signInWithPopup(profile).then<User>(credential => {
-    return {
+  return firebase.auth().signInWithPopup(profile).then(credential => {
+    const user: User = {
       displayName: credential.user?.displayName || '',
       photoUrl: credential.user?.photoURL || ''
     };
+
+    dispatch(updateUser(user));
+    dispatch(push('/employees'));
   });
 });
 
@@ -39,27 +60,14 @@ export const appSlice = createSlice({
   name: 'app',
   initialState,
   reducers: {
-    loadUser: (state) => {
-      const currentUser = firebase.auth().currentUser;
-
-      if (currentUser) {
-        state.user = {
-          displayName: currentUser.displayName || '',
-          photoUrl: currentUser.photoURL || ''
-        };
-      }
-
-      state.status = !currentUser ? 'unauthenticated' : 'authenticated';
+    updateUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
+      state.status = !action.payload ? 'unauthenticated' : 'authenticated';
     }
   },
   extraReducers: builder => {
     builder.addCase(login.pending, (state) => {
       state.status = 'authenticating';
-    });
-
-    builder.addCase(login.fulfilled, (state, action) => {
-      state.user = action.payload;
-      state.status = 'authenticated';
     });
 
     builder.addCase(login.rejected, (state) => {
@@ -68,7 +76,7 @@ export const appSlice = createSlice({
   }
 });
 
-export const { loadUser } = appSlice.actions;
+const { updateUser } = appSlice.actions;
 
 export const selectCurrentUser = (state: RootState) => state.app.user;
 

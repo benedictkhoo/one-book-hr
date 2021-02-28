@@ -17,6 +17,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import AddIcon from '@material-ui/icons/Add';
+import { push, replace } from 'connected-react-router';
 import React, { MouseEvent, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUser } from '../../appSlice';
@@ -49,6 +50,8 @@ export function EmployeeList() {
     setAnchorEl(null);
   };
   const signOut = () => dispatch(logout());
+  const newEmployee = () => dispatch(replace('/employees/new'));
+  const viewEmployee = (id: string) => dispatch(push(`/employees/${id}`));
   const classes = useStyles();
   const isUserMenuOpen = !!anchorEl;
 
@@ -114,7 +117,7 @@ export function EmployeeList() {
               <TableBody>
                 {
                   employees.map((employee) => (
-                    <TableRow key={employee.id}>
+                    <TableRow key={employee.id} onClick={(_) => viewEmployee(employee.id)}>
                       <TableCell>{employee.firstName}</TableCell>
                       <TableCell>{employee.middleInitial}</TableCell>
                       <TableCell>{employee.lastName}</TableCell>
@@ -130,7 +133,7 @@ export function EmployeeList() {
         }
       </Container>
 
-      <Fab className={classes.fab} color="primary">
+      <Fab className={classes.fab} color="primary" onClick={(_) => newEmployee()}>
         <AddIcon />
       </Fab>
     </>
